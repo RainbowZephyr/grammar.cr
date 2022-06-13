@@ -1,9 +1,11 @@
 require "./rule"
 require "./identifiers"
-
+require "./antlr_exception"
+require "../misc/stack"
 module Grammar
     
     class Antlr
+        
         # property terminals : Set(String)
         # property nonterminals : Set(String)
         # property grammar : Array(Grammar::Rule)
@@ -25,40 +27,50 @@ module Grammar
         end
         
         private def self.extract(lines : Array(String))
-            puts "Lines #{lines}"
-            stack = Array(Grammar::Identifiers).new()
-            lines.each do |l| 
-                handle_multiline_comments(l, stack)
+            stack = Stack(Grammar::Identifiers).new()
+            line = 0
+            
+            while line < lines.size
+                puts "#{line+1} #{lines[line]}"
                 
+                if lines[line].starts_with?("//")
+                    line += 1
+                    next
+                elsif lines[line].starts_with?("/*")
+                    # pp "Stack #{stack.stack}"
+                    if(!lines[line].ends_with? "*/")
+                        stack.push Grammar::Identifiers::COMMENT
+                    end
+                    line += 1
+                    while stack.peek == Grammar::Identifiers::COMMENT && line < lines.size
+                        if(lines[line].starts_with? "/*")
+                            Grammar::AntlrException.new(lines[line])
+                        end
 
+                        if lines[line].ends_with? "*/"
+                            stack.pop
+                            line -= 1
+                        end
+                        line += 1
+                    end
+                    
+                    
+                elsif lines[line].starts_with? "grammar"
+                    puts lines[line]
+                # elsif stack.size > 0 && stack[-1] == Grammar::Identifiers::COMMENT
+                else 
+                    
+                end
+                line += 1
                 if !stack.empty?
-                    raise "Not a valid Antlr grammar"
+                    Grammar::AntlrException.new(lines[line])
                 end
             end
             
         end
-        
-        private def self.handle_multiline_comments(line : String, stack : Array)
-            if(l.starts_with? "/*")
-                if(!l.ends_with? "*/")
-                    stack.push Grammar::Identifiers::COMMENT
-                end
-            end
-            
-            if(l.starts_with? "*/")
-                if stack.empty?
-                    raise "Not a valid Antlr grammar"
-                elsif (stack[-1] == Grammar::Identifiers::COMMENT) 
-                    stack.pop                        
-                else
-                    raise "Not a valid Antlr grammar"
-                end
-            end 
-        end    
-
     end
 end
 
-x = Grammar::Antlr.from_file("/home/ryzen/Documents/grammar.cr/sample_grammars/antlr/comments.g4")
+x = Grammar::Antlr.from_file("/home/ryzen/Documents/grammar.cr/sample_grammars/antlr/moo.g4")
 # 
 # puts typeof(x)
