@@ -1,7 +1,8 @@
 module Grammar 
     enum Identifiers
         COMMENT
-        RULE
+        HEAD
+        BODY
 
     end
 

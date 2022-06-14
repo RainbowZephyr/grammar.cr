@@ -8,30 +8,34 @@ module Grammar
         
         # property terminals : Set(String)
         # property nonterminals : Set(String)
-        # property grammar : Array(Grammar::Rule)
+        property grammar : Array(Grammar::Rule)
         # # class Reader
         
-        # def initialize(@terminals = terminals, @nonterminals = nonterminals)
-        
-        # end
+        def initialize(@grammar = grammar)
+        end
         
         def self.from_file(path : String)
             
             lines : Array(String) = File.read_lines(path).map {|l| l.strip }.select {|l| l != "" && !l.nil? }
-            
-            extract(lines)
+            grammar = extract(lines)
+            grammar.each {|g| puts g.to_s}
         end
         
         def self.from_string(string : String)
             lines : Array(String) = string.split("\n").map {|l| l.strip }.select {|l| l != "" && !l.nil? }
         end
         
-        private def self.extract(lines : Array(String))
+        # private def self.build(lines : Array(String))
+        #     this = self.new()
+        # end
+        
+        private def self.extract(lines : Array(String)) : Array(Grammar::Rule)
             stack = Stack(Grammar::Identifiers).new()
             line = 0
+            grammar = Array(Grammar::Rule).new()
             
             while line < lines.size
-                puts "#{line+1} #{lines[line]}"
+                # puts "#{line+1} #{lines[line]}"
                 
                 if lines[line].starts_with?("//")
                     line += 1
@@ -40,25 +44,108 @@ module Grammar
                     # pp "Stack #{stack.stack}"
                     if(!lines[line].ends_with? "*/")
                         stack.push Grammar::Identifiers::COMMENT
-                    end
-                    line += 1
-                    while stack.peek == Grammar::Identifiers::COMMENT && line < lines.size
-                        if(lines[line].starts_with? "/*")
-                            Grammar::AntlrException.new(lines[line])
-                        end
-
-                        if lines[line].ends_with? "*/"
-                            stack.pop
-                            line -= 1
-                        end
+                        
                         line += 1
+                        while stack.peek == Grammar::Identifiers::COMMENT && line < lines.size
+                            if(lines[line].starts_with? "/*")
+                                Grammar::AntlrException.new(lines[line])
+                            end
+                            
+                            if lines[line].ends_with? "*/"
+                                stack.pop
+                                line -= 1
+                            end
+                            line += 1
+                        end
+                    else
+                        line += 1
+                        next
                     end
-                    
+                elsif lines[line].starts_with? "*/"   
+                    if stack.peek != Grammar::Identifiers::COMMENT
+                        Grammar::AntlrException.new(lines[line])
+                    else 
+                        stack.pop 
+                    end
                     
                 elsif lines[line].starts_with? "grammar"
-                    puts lines[line]
-                # elsif stack.size > 0 && stack[-1] == Grammar::Identifiers::COMMENT
+                    # puts lines[line]
+                    # elsif stack.size > 0 && stack[-1] == Grammar::Identifiers::COMMENT
                 else 
+                    if /^(\w+)\s*:\s+(.+(?=;)$)/ =~ lines[line]
+                        head = $1
+                        productions = $2
+                        grammar.push(Grammar::Rule.new(head, productions.strip))
+                        puts "Grammar: #{head} => #{productions}"
+                    elsif /^(.+(?=:)$)/ =~ lines[line]
+                        head = $1
+                        stack.push Grammar::Identifiers::BODY
+                        
+                        body = ""
+                        line += 1
+                        while stack.peek == Grammar::Identifiers::BODY && line < lines.size
+                            # TODO: handle comments in body
+                            if lines[line].ends_with? ";"
+                                if /^:?(.+(?=;))$/ =~ lines[line]
+                                    body += $1
+                                end
+                                
+                                stack.pop
+                                line-= 1
+                            else 
+                                if /^:/ =~ lines[line]
+                                    body += lines[line][1..-1]
+                                else 
+                                    body += lines[line]
+                                end
+                            end
+                            line += 1
+                        end
+
+                        grammar.push(Grammar::Rule.new(head, body.strip))
+
+                    elsif !lines[line].includes? ":"
+                        stack.push Grammar::Identifiers::HEAD
+                        head = lines[line]
+                        
+                        body = ""
+                        line += 1
+                        while stack.peek == Grammar::Identifiers::HEAD && line < lines.size
+                            # TODO: handle comments in body
+                            if lines[line].starts_with? ":"
+                                if /^:(.+(?=;))$/ =~ lines[line]
+                                    body += $1
+                                end
+                                
+                                stack.pop
+                                line-= 1
+                            end
+                            line += 1
+                        end
+
+                        stack.push Grammar::Identifiers::BODY
+                        
+                        while stack.peek == Grammar::Identifiers::BODY && line < lines.size
+                            # TODO: handle comments in body
+                            if lines[line].ends_with? ";"
+                                if /^:?(.+(?=;))$/ =~ lines[line]
+                                    body += $1
+                                end
+                                
+                                stack.pop
+                                line-= 1
+                            else 
+                                if /^:/ =~ lines[line]
+                                    body += lines[line][1..-1]
+                                else 
+                                    body += lines[line]
+                                end
+                            end
+                            line += 1
+                        end
+                        grammar.push(Grammar::Rule.new(head, body.strip))
+
+                    end
                     
                 end
                 line += 1
@@ -66,7 +153,7 @@ module Grammar
                     Grammar::AntlrException.new(lines[line])
                 end
             end
-            
+            return grammar
         end
     end
 end
