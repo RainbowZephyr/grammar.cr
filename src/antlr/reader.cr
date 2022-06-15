@@ -6,12 +6,12 @@ module Grammar
     
     class Antlr
         
-        # property terminals : Set(String)
-        # property nonterminals : Set(String)
+        property terminals : Set(String) 
+        property nonterminals : Set(String)
         property grammar : Array(Grammar::Rule)
         # # class Reader
         
-        def initialize(@grammar = grammar)
+        def initialize(@grammar = grammar, @terminals = terminals, @nonterminals = terminals)
         end
         
         def self.from_file(path : String)
@@ -19,6 +19,36 @@ module Grammar
             lines : Array(String) = File.read_lines(path).map {|l| l.strip }.select {|l| l != "" && !l.nil? }
             grammar = extract(lines)
             grammar.each {|g| puts g.to_s}
+            nonterminals = grammar.map {|g| g.head}.to_set
+            stack = Stack(Grammar::Identifiers).new()
+            grammar.each do |g| 
+                body = g.body.split("|")
+                
+
+                
+                production = 0
+                while production < body.size
+                    if(body[production].count("(") > 0)
+                        body[production].count("(").times { |t| stack.push Grammar::Identifiers::BRACKET}
+                        
+                        
+                        production += 1
+                        while stack.peek == Grammar::Identifiers::BRACKET
+                            if body[production].includes? ")"
+                                
+                            else
+                                
+                            end
+                        end
+                        
+                    else 
+
+                    end
+                    production += 1
+                end
+                
+            end
+            
         end
         
         def self.from_string(string : String)
@@ -101,9 +131,9 @@ module Grammar
                             end
                             line += 1
                         end
-
+                        
                         grammar.push(Grammar::Rule.new(head, body.strip))
-
+                        
                     elsif !lines[line].includes? ":"
                         stack.push Grammar::Identifiers::HEAD
                         head = lines[line]
@@ -122,7 +152,7 @@ module Grammar
                             end
                             line += 1
                         end
-
+                        
                         stack.push Grammar::Identifiers::BODY
                         
                         while stack.peek == Grammar::Identifiers::BODY && line < lines.size
@@ -144,10 +174,10 @@ module Grammar
                             line += 1
                         end
                         grammar.push(Grammar::Rule.new(head, body.strip))
-                    
+                        
                     else
                         puts "Not Matched: `#{lines[line]}`"
-
+                        
                     end
                     
                 end

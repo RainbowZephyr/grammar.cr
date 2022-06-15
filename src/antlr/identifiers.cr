@@ -3,6 +3,7 @@ module Grammar
         COMMENT
         HEAD
         BODY
+        BRACKET
 
     end
 
