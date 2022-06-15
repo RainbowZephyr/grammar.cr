@@ -72,7 +72,7 @@ module Grammar
                     # puts lines[line]
                     # elsif stack.size > 0 && stack[-1] == Grammar::Identifiers::COMMENT
                 else 
-                    if /^(\w+)\s*:\s+(.+(?=;)$)/ =~ lines[line]
+                    if /^(\w+)\s*:\s+(.+(?=;$))/ =~ lines[line]
                         head = $1
                         productions = $2
                         grammar.push(Grammar::Rule.new(head, productions.strip))
@@ -86,7 +86,7 @@ module Grammar
                         while stack.peek == Grammar::Identifiers::BODY && line < lines.size
                             # TODO: handle comments in body
                             if lines[line].ends_with? ";"
-                                if /^:?(.+(?=;))$/ =~ lines[line]
+                                if /^:?(.+(?=;$))/ =~ lines[line]
                                     body += $1
                                 end
                                 
@@ -113,7 +113,7 @@ module Grammar
                         while stack.peek == Grammar::Identifiers::HEAD && line < lines.size
                             # TODO: handle comments in body
                             if lines[line].starts_with? ":"
-                                if /^:(.+(?=;))$/ =~ lines[line]
+                                if /^:(.+(?=;$))/ =~ lines[line]
                                     body += $1
                                 end
                                 
@@ -128,7 +128,7 @@ module Grammar
                         while stack.peek == Grammar::Identifiers::BODY && line < lines.size
                             # TODO: handle comments in body
                             if lines[line].ends_with? ";"
-                                if /^:?(.+(?=;))$/ =~ lines[line]
+                                if /^:?(.+(?=;$))/ =~ lines[line]
                                     body += $1
                                 end
                                 
@@ -144,6 +144,9 @@ module Grammar
                             line += 1
                         end
                         grammar.push(Grammar::Rule.new(head, body.strip))
+                    
+                    else
+                        puts "Not Matched: `#{lines[line]}`"
 
                     end
                     
