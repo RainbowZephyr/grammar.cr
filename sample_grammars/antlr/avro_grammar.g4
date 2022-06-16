@@ -1,11 +1,12 @@
 grammar avro_grammar;
 
 
-s: '{'('\n')*'"namespace": "ritec.webserver.pojo",\n"type": ' type ',\n' '"name": ' NAME ',\n"fields": [\n' fields '\n]\n}';
+s: '{' SPACE* '"namespace"' SPACE* ':' SPACE* NAME SPACE* COMMA SPACE* '"type": ' type ',\n' '"name"' SPACE* ':' SPACE*  NAME ',\n"fields": [\n' fields '\n]\n}';
 type: '"null"' (', ' type)* | '"boolean"' (', ' type)* | '"int"' (', ' type)* | '"long"' (', ' type)* | '"float"' (', ' type)* | '"double"' (', ' type)* | '"bytes"' (', ' type)* | '"string"' (', ' type)* | '"record"' (', ' type)* | '"enum"' (', ' type)* | '{\n"type": "array",\n"items": ' type '}'(', ' type)* | '"map"' (', ' type)* | '"fixed"' (', ' type)* | '"LongList"' (', ' type)* | '[' type ']' | fields | ;
 fields: '{\n"name"'SPACE*':' SPACE* NAME SPACE* ',' SPACE* '"type": ' type ('\n}')* (',\n' fields)* | '\n"fields": [\n' fields '\n]\n}' | '{\n"type": ' type ('\n}')* (',\n' fields)* | ;
-NAME: '"'[a-zA-Z0-9_]+'"';
-SPACE: [ \t\r\n]+;
+NAME: '"'[a-zA-Z0-9_.]+'"';
+SPACE: [ \n\t]+;
+COMMA: (',\n' | ',');
 
 //s: '{'('\n')*'"namespace": "ritec.webserver.pojo",\n"type": ' type ',\n' '"name": ' name ',\n'
 //    '"aliases": ["LinkedLongs"],\n"fields": [\n' fields '\n]\n}';
