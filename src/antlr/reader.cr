@@ -17,13 +17,12 @@ module Grammar
         def self.from_file(path : String)
             
             lines : Array(String) = File.read_lines(path).map {|l| l.strip }.select {|l| l != "" && !l.nil? }
-            grammar : Array(Grammar::Rule) = extract(lines)
-            grammar.each {|g| puts g.to_s}
-            nonterminals = grammar.map {|g| g.head}.to_set
+            local_grammar : Array(Grammar::Rule) = extract(lines)
+            # local_grammar.each {|g| puts g.to_s}
+            nonterminals = local_grammar.map {|g| g.head}.to_set
             stack = Stack(Grammar::Identifiers).new()
-            grammar.each do |g| 
+            local_grammar.each do |g| 
                 body = g.body.split(/('\('|'\)'|\s)/).map {|b| b.strip} .select {|b| b !="" && !b.nil? }
-                puts "BODY #{body}"
 
                 new_body : Array(String | Array(String)) = Array(String |  Array(String)).new()
                 if body.includes? "|"
@@ -33,7 +32,7 @@ module Grammar
                             stack.push Grammar::Identifiers::OPEN_BRACKET
                             sub_body : Array(String) = Array(String).new()
                             # production += 1
-                            puts "SUB #{sub_body}"
+                   
                             while stack.peek == Grammar::Identifiers::OPEN_BRACKET && production < body.size 
                                 sub_body << body[production]
                                 if body[production].ends_with? ")"
@@ -50,6 +49,11 @@ module Grammar
                     end
                 else 
                     new_body += body
+                end
+
+                if new_body.includes? "->"
+                index = new_body.index {|b| b == "->"}
+                new_body = new_body[0...index]
                 end
 
                 puts "NEW #{new_body}"
