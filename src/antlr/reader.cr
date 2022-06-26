@@ -17,35 +17,46 @@ module Grammar
         def self.from_file(path : String)
             
             lines : Array(String) = File.read_lines(path).map {|l| l.strip }.select {|l| l != "" && !l.nil? }
-            grammar = extract(lines)
+            grammar : Array(Grammar::Rule) = extract(lines)
             grammar.each {|g| puts g.to_s}
             nonterminals = grammar.map {|g| g.head}.to_set
             stack = Stack(Grammar::Identifiers).new()
             grammar.each do |g| 
-                body = g.body.split("|")
-                
+                body = g.body.split(/('\('|'\)'|\s)/).map {|b| b.strip} .select {|b| b !="" && !b.nil? }
+                puts "BODY #{body}"
 
-                
-                production = 0
-                while production < body.size
-                    if(body[production].count("(") > 0)
-                        body[production].count("(").times { |t| stack.push Grammar::Identifiers::BRACKET}
-                        
-                        
-                        production += 1
-                        while stack.peek == Grammar::Identifiers::BRACKET
-                            if body[production].includes? ")"
-                                
-                            else
-                                
+                new_body : Array(String | Array(String)) = Array(String |  Array(String)).new()
+                if body.includes? "|"
+                    production = 0
+                    while production < body.size
+                        if body[production].starts_with? "("
+                            stack.push Grammar::Identifiers::OPEN_BRACKET
+                            sub_body : Array(String) = Array(String).new()
+                            # production += 1
+                            puts "SUB #{sub_body}"
+                            while stack.peek == Grammar::Identifiers::OPEN_BRACKET && production < body.size 
+                                sub_body << body[production]
+                                if body[production].ends_with? ")"
+                                    stack.pop
+                                    production -= 1
+                                end
+                                production += 1
                             end
+                            new_body << sub_body
+                        else 
+                            new_body << body[production]
                         end
-                        
-                    else 
-
+                        production += 1
                     end
-                    production += 1
+                else 
+                    new_body += body
                 end
+
+                puts "NEW #{new_body}"
+
+                
+
+        
                 
             end
             

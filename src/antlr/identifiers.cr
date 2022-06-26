@@ -3,7 +3,8 @@ module Grammar
         COMMENT
         HEAD
         BODY
-        BRACKET
+        OPEN_BRACKET
+        
 
     end
 
