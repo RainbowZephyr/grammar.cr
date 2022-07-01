@@ -15,15 +15,17 @@ module Grammar
         end
         
         def self.from_file(path : String)
+            final_grammar = Array(Grammar::Rule).new()
             
             lines : Array(String) = File.read_lines(path).map {|l| l.strip }.select {|l| l != "" && !l.nil? }
-            local_grammar : Array(Grammar::Rule) = extract(lines)
+            local_grammar : Hash(String, String) = extract(lines)
             # local_grammar.each {|g| puts g.to_s}
-            nonterminals = local_grammar.map {|g| g.head}.to_set
+            nonterminals = local_grammar.keys.to_set
+            
             stack = Stack(Grammar::Identifiers).new()
-            local_grammar.each do |g| 
-                body = g.body.split(/('\('|'\)'|\s)/).map {|b| b.strip} .select {|b| b !="" && !b.nil? }
-
+            local_grammar.each do |h,b| 
+                body = b.split(/('\('|'\)'|\s)/).map {|s| s.strip} .select {|s| s !="" && !s.nil? }
+                
                 new_body : Array(String | Array(String)) = Array(String |  Array(String)).new()
                 if body.includes? "|"
                     production = 0
@@ -32,7 +34,7 @@ module Grammar
                             stack.push Grammar::Identifiers::OPEN_BRACKET
                             sub_body : Array(String) = Array(String).new()
                             # production += 1
-                   
+                            
                             while stack.peek == Grammar::Identifiers::OPEN_BRACKET && production < body.size 
                                 sub_body << body[production]
                                 if body[production].ends_with? ")"
@@ -50,19 +52,15 @@ module Grammar
                 else 
                     new_body += body
                 end
-
+                
                 if new_body.includes? "->"
-                index = new_body.index {|b| b == "->"}
-                new_body = new_body[0...index]
+                    index = new_body.index {|b| b == "->"}
+                    new_body = new_body[0...index]
                 end
 
-                puts "NEW #{new_body}"
-
-                
-
-        
-                
+                final_grammar << Grammar::Rule.new(h, new_body)     
             end
+            final_grammar.each {|x| puts x.to_s}
             
         end
         
@@ -74,10 +72,10 @@ module Grammar
         #     this = self.new()
         # end
         
-        private def self.extract(lines : Array(String)) : Array(Grammar::Rule)
+        private def self.extract(lines : Array(String)) : Hash(String, String)
             stack = Stack(Grammar::Identifiers).new()
             line = 0
-            grammar = Array(Grammar::Rule).new()
+            grammar = Hash(String, String).new()
             
             while line < lines.size
                 # puts "#{line+1} #{lines[line]}"
@@ -120,7 +118,7 @@ module Grammar
                     if /^(\w+)\s*:\s+(.+(?=;$))/ =~ lines[line]
                         head = $1
                         productions = $2
-                        grammar.push(Grammar::Rule.new(head, productions.strip))
+                        grammar[head] =  productions.strip
                         puts "Grammar: #{head} => #{productions}"
                     elsif /^(.+(?=:)$)/ =~ lines[line]
                         head = $1
@@ -147,7 +145,7 @@ module Grammar
                             line += 1
                         end
                         
-                        grammar.push(Grammar::Rule.new(head, body.strip))
+                        grammar[head] = body.strip
                         
                     elsif !lines[line].includes? ":"
                         stack.push Grammar::Identifiers::HEAD
@@ -188,7 +186,7 @@ module Grammar
                             end
                             line += 1
                         end
-                        grammar.push(Grammar::Rule.new(head, body.strip))
+                        grammar.[head] = body.strip
                         
                     else
                         puts "Not Matched: `#{lines[line]}`"

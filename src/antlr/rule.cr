@@ -1,7 +1,7 @@
 module Grammar
     class Rule 
         property head : String
-        property body : String
+        property body : Array(String | Array(String))
         
         def initialize(@head = head, @body = body)
         end
