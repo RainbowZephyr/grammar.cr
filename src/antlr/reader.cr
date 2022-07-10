@@ -190,6 +190,6 @@ module Grammar
     end
 end
 
-x = Grammar::Antlr.from_file("/home/ryzen/Documents/grammar.cr/sample_grammars/antlr/moo.g4")
+x = Grammar::Antlr.from_file("/home/ryzen/Documents/grammar.cr/sample_grammars/antlr/comments.g4")
 # 
 # puts typeof(x)
