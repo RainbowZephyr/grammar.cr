@@ -24,41 +24,93 @@ module Grammar
             
             stack = Stack(Grammar::Identifiers).new()
             local_grammar.each do |h,b| 
-                body = b.split(/('\('|'\)'|\s)/).map {|s| s.strip} .select {|s| s !="" && !s.nil? }
-                
-                new_body : Array(String | Array(String)) = Array(String |  Array(String)).new()
-                if body.includes? "|"
-                    production = 0
-                    while production < body.size
-                        if body[production].starts_with? "("
-                            stack.push Grammar::Identifiers::OPEN_BRACKET
-                            sub_body : Array(String) = Array(String).new()
-                            # production += 1
-                            
-                            while stack.peek == Grammar::Identifiers::OPEN_BRACKET && production < body.size 
-                                sub_body << body[production]
-                                if body[production].ends_with? ")"
-                                    stack.pop
-                                    production -= 1
-                                end
-                                production += 1
+                body = b.split(/(?<!\()(\|)(?![\w\s]*[\'\)])/).map {|s| s.strip} .select {|s| s !="" && !s.nil? }
+                puts "BODY: #{body}"
+
+
+                sub_body : Array(Array(String)) = Array(Array(String)).new()
+                i = 0
+                while i < body.size 
+                    if body[i] == "|"
+                        i+= 1
+                        next
+                    elsif !body[i].includes? "("    
+                        sub_body << body[i].split " "
+                    else 
+                        productions =  body[i].split /(?<![\(\|])(\s)(?![\|\+\)])/
+                        puts "prods #{productions}"
+
+                        j=0
+                        brackets_stack = Stack(Tuple(Grammar::Identifiers, Int32)).new
+                        substrings = Hash(Int32, Int32).new()
+                        while j < body[i].size 
+                            puts "ody #{body[i]} #{j}"
+                            if body[i][j] == "("
+                                brackets_stack.push( {Grammar::Identifiers::OPEN_BRACKET, j})
+                            elsif body[i][j] == ")"
+                                tuple = brackets_stack.pop 
+                                puts "tuple #{tuple}"
+                                substrings[tuple[1]] = j
                             end
-                            new_body << sub_body
-                        else 
-                            new_body << body[production]
+                            j+=1
                         end
-                        production += 1
+                        puts "SUBS #{substrings}"
+
+
+
                     end
-                else 
-                    new_body += body
-                end
-                
-                if new_body.includes? "->"
-                    index = new_body.index {|b| b == "->"}
-                    new_body = new_body[0...index]
+                    i+=1
                 end
 
-                final_grammar << Grammar::Rule.new(h, new_body)     
+                # puts "SUB #{sub_body}"
+            #     new_body : Array(String | Array(String)) = Array(String |  Array(String)).new()
+            #     if body.includes? "|"
+            #         production = 0
+            #         while production < body.size
+            #             if body[production].starts_with? "("
+            #                 stack.push Grammar::Identifiers::OPEN_BRACKET
+            #                 sub_body : Array(String) = Array(String).new()
+            #                 # production += 1
+                            
+            #                 while stack.peek == Grammar::Identifiers::OPEN_BRACKET && production < body.size 
+            #                     if body[production] != "|"
+            #                         if body[production].starts_with? "("
+            #                             sub_body << body[production][1..-1]
+            #                         elsif body[production].ends_with? ")"
+            #                             sub_body << body[production][0..-2]
+            #                         else
+            #                             sub_body << body[production]
+            #                         end
+            #                     end
+                                
+            #                     if body[production].ends_with? ")"
+            #                         stack.pop
+            #                         production -= 1
+            #                     end
+            #                     production += 1
+            #                 end
+            #                 new_body << sub_body
+            #             else 
+            #                 if body[production].starts_with? "("
+            #                     new_body << body[production][1..-1]
+            #                 elsif body[production].ends_with? ")"
+            #                     new_body << body[production][0..-2]
+            #                 else
+            #                     new_body << body[production]
+            #                 end
+            #             end
+            #             production += 1
+            #         end
+            #     else 
+            #         new_body += body
+            #     end
+                
+            #     if new_body.includes? "->"
+            #         index = new_body.index {|b| b == "->"}
+            #         new_body = new_body[0...index]
+            #     end
+
+                # final_grammar << Grammar::Rule.new(h, sub_body)     
             end
             final_grammar.each {|x| puts x.to_s}
             
